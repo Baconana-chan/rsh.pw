@@ -1,0 +1,808 @@
+---
+import { getBundle, getBundleLinks } from "../db/client";
+import { ui } from "../i18n/ui";
+import {
+    backgroundStyleOptions,
+    buttonStyleOptions,
+    cardStyleOptions,
+    DEFAULT_BACKGROUND_STYLE,
+    DEFAULT_BUTTON_STYLE,
+    DEFAULT_CARD_STYLE,
+    DEFAULT_THEME,
+    themeOptions,
+} from "../lib/bundle-options";
+import SEO from "./SEO.astro";
+
+// Get the bundle slug from Props (passed from page)
+const { bundleSlug, lang = "en" } = Astro.props;
+const bundle = bundleSlug ? getBundle(bundleSlug) : null;
+const links = bundle ? getBundleLinks(bundleSlug) : [];
+
+const t = ui[lang as keyof typeof ui];
+const selectedTheme = bundle?.theme || DEFAULT_THEME;
+const selectedBackgroundStyle = bundle?.bg_style || DEFAULT_BACKGROUND_STYLE;
+const selectedCardStyle = bundle?.card_style || DEFAULT_CARD_STYLE;
+const selectedButtonStyle = bundle?.button_style || DEFAULT_BUTTON_STYLE;
+
+// If bundle not found, redirect to home (or show error in component)
+// In a component we can't easily adhere to 'return Astro.redirect',
+// but if we are called from a page that guarantees existence or handles it, it's fine.
+// However, the page already checked param.
+// Let's assume the page ensures bundleSlug is present, but validation happens here.
+
+if (!bundle) {
+    // Ideally we should redirect, but components run during rendering.
+    // We'll rely on the template to handle null bundle or redirect if possible,
+    // but Astro.redirect works in frontmatter of component too.
+    return Astro.redirect("/?error=not_found");
+}
+
+// Serialize links for JavaScript
+const linksData = JSON.stringify(
+    links.map((l: any) => ({
+        title: l.title,
+        url: l.url,
+        isHighlighted: l.is_highlighted === 1,
+    })),
+);
+---
+
+<html lang={lang}>
+    <head>
+        <SEO
+            title={`${t.edit_bundle || "Edit Bundle"} - ${bundle.title} | rsh.pw`}
+            description={t.edit_bundle_subtitle ||
+                "Make changes to your link bundle"}
+        />
+        <style>
+            @keyframes gradient {
+                0% {
+                    background-position: 0% 50%;
+                }
+                50% {
+                    background-position: 100% 50%;
+                }
+                100% {
+                    background-position: 0% 50%;
+                }
+            }
+            .animate-gradient {
+                background-size: 200% 200%;
+                animation: gradient 15s ease infinite;
+            }
+            .link-item:hover {
+                border-color: rgba(139, 92, 246, 0.5);
+            }
+        </style>
+    </head>
+    <body
+        class="bg-gray-900 text-white min-h-screen font-sans antialiased selection:bg-cyan-500 selection:text-white"
+    >
+        <!-- Header -->
+        <div
+            class="absolute top-4 left-4 right-4 flex justify-between items-center"
+        >
+            <div class="flex items-center gap-6">
+                <a
+                    href={`/b/${bundleSlug}`}
+                    class="text-gray-400 hover:text-white transition-colors flex items-center gap-2"
+                >
+                    <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        width="20"
+                        height="20"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        stroke-width="2"
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                    >
+                        <line x1="19" y1="12" x2="5" y2="12"></line>
+                        <polyline points="12 19 5 12 12 5"></polyline>
+                    </svg>
+                    <span class="text-sm hidden sm:inline"
+                        >{t.back_to_bundle || "Back to Bundle"}</span
+                    >
+                </a>
+
+                <div class="flex gap-3 text-sm text-gray-400">
+                    <a
+                        href={`/b/${bundleSlug}/edit`}
+                        class={`hover:text-white transition-colors ${lang === "en" ? "text-white font-bold" : ""}`}
+                        >EN</a
+                    >
+                    <a
+                        href={`/ru/b/${bundleSlug}/edit`}
+                        class={`hover:text-white transition-colors ${lang === "ru" ? "text-white font-bold" : ""}`}
+                        >RU</a
+                    >
+                </div>
+            </div>
+        </div>
+
+        <main
+            class="w-full max-w-lg mx-auto px-6 py-20 flex flex-col items-center gap-8"
+        >
+            <!-- Title -->
+            <div class="text-center space-y-2">
+                <h1
+                    class="text-4xl font-black tracking-tighter bg-clip-text text-transparent bg-gradient-to-r from-cyan-300 to-teal-400 animate-gradient"
+                >
+                    {t.edit_bundle || "Edit Bundle"}
+                </h1>
+                <p class="text-gray-400 text-sm">
+                    {
+                        t.edit_bundle_subtitle ||
+                            "Make changes to your link bundle"
+                    }
+                </p>
+            </div>
+
+            <!-- Auth Check Message -->
+            <div
+                id="auth-required"
+                class="w-full bg-yellow-500/10 border border-yellow-500/30 rounded-xl p-4 text-center"
+            >
+                <p class="text-yellow-400 text-sm">
+                    {t.verifying_access || "Verifying access..."}
+                </p>
+            </div>
+
+            <!-- Form (hidden until auth verified) -->
+            <form
+                id="edit-form"
+                class="w-full space-y-6 bg-gray-800/50 p-6 rounded-2xl border border-gray-700/50 backdrop-blur-sm shadow-xl hidden"
+            >
+                <!-- Bundle Title -->
+                <div class="space-y-2">
+                    <label class="text-sm text-gray-400"
+                        >{t.bundle_title || "Bundle Title"} *</label
+                    >
+                    <input
+                        type="text"
+                        name="title"
+                        required
+                        value={bundle.title}
+                        class="w-full bg-gray-900/50 border border-gray-700 rounded-xl px-4 py-3 text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-cyan-500/50 focus:border-cyan-500 transition-all"
+                    />
+                </div>
+
+                <!-- Bundle Description -->
+                <div class="space-y-2">
+                    <label class="text-sm text-gray-400"
+                        >{
+                            t.bundle_description || "Description (optional)"
+                        }</label
+                    >
+                    <textarea
+                        name="description"
+                        rows="2"
+                        class="w-full bg-gray-900/50 border border-gray-700 rounded-xl px-4 py-3 text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-cyan-500/50 focus:border-cyan-500 transition-all resize-none"
+                        >{bundle.description}</textarea
+                    >
+                </div>
+
+                <!-- Theme Selection -->
+                <div class="space-y-2">
+                    <label class="text-sm text-gray-400"
+                        >{t.theme || "Color Theme"}</label
+                    >
+                    <div class="flex flex-wrap gap-2">
+                        {
+                            themeOptions.map((option) => (
+                                <button
+                                    type="button"
+                                    data-theme={option.value}
+                                    class={`theme-btn ${option.className} ${selectedTheme === option.value ? "border-white" : ""}`}
+                                ></button>
+                            ))
+                        }
+                    </div>
+                    <input
+                        type="hidden"
+                        name="theme"
+                        value={selectedTheme}
+                    />
+                </div>
+
+                <!-- Background Style -->
+                <div class="space-y-2">
+                    <label class="text-sm text-gray-400"
+                        >{t.bg_style || "Background"}</label
+                    >
+                    <div class="flex flex-wrap gap-2">
+                        {
+                            backgroundStyleOptions.map((option) => (
+                                <button
+                                    type="button"
+                                    data-bgstyle={option.value}
+                                    class={`bgstyle-btn ${option.className} ${selectedBackgroundStyle === option.value ? "ring-2 ring-offset-2 ring-cyan-500 ring-offset-gray-900" : ""}`}
+                                >
+                                    {t[option.labelKey as keyof typeof t] ||
+                                        option.fallbackLabel}
+                                </button>
+                            ))
+                        }
+                    </div>
+                    <input
+                        type="hidden"
+                        name="bgStyle"
+                        value={selectedBackgroundStyle}
+                    />
+                </div>
+
+                <!-- Card Style -->
+                <div class="space-y-2">
+                    <label class="text-sm text-gray-400"
+                        >{t.card_style || "Card Style"}</label
+                    >
+                    <div class="flex flex-wrap gap-2">
+                        {
+                            cardStyleOptions.map((option) => (
+                                <button
+                                    type="button"
+                                    data-cardstyle={option.value}
+                                    class={`cardstyle-btn ${option.className} ${selectedCardStyle === option.value ? "ring-2 ring-offset-2 ring-cyan-500 ring-offset-gray-900" : ""}`}
+                                >
+                                    {t[option.labelKey as keyof typeof t] ||
+                                        option.fallbackLabel}
+                                </button>
+                            ))
+                        }
+                    </div>
+                    <input
+                        type="hidden"
+                        name="cardStyle"
+                        value={selectedCardStyle}
+                    />
+                </div>
+
+                <!-- Button Shape -->
+                <div class="space-y-2">
+                    <label class="text-sm text-gray-400"
+                        >{t.button_style || "Button Shape"}</label
+                    >
+                    <div class="flex flex-wrap gap-2">
+                        {
+                            buttonStyleOptions.map((option) => (
+                                <button
+                                    type="button"
+                                    data-buttonstyle={option.value}
+                                    class={`buttonstyle-btn ${option.className} ${selectedButtonStyle === option.value ? "ring-2 ring-offset-2 ring-cyan-500 ring-offset-gray-900" : ""}`}
+                                >
+                                    {t[option.labelKey as keyof typeof t] ||
+                                        option.fallbackLabel}
+                                </button>
+                            ))
+                        }
+                    </div>
+                    <input
+                        type="hidden"
+                        name="buttonStyle"
+                        value={selectedButtonStyle}
+                    />
+                </div>
+
+                <!-- Links Section -->
+                <div class="space-y-3">
+                    <div class="flex justify-between items-center">
+                        <label class="text-sm text-gray-400"
+                            >{t.links || "Links"} *</label
+                        >
+                        <button
+                            type="button"
+                            id="add-link-btn"
+                            class="text-sm text-cyan-400 hover:text-cyan-300 transition-colors flex items-center gap-1"
+                        >
+                            <svg
+                                xmlns="http://www.w3.org/2000/svg"
+                                width="16"
+                                height="16"
+                                viewBox="0 0 24 24"
+                                fill="none"
+                                stroke="currentColor"
+                                stroke-width="2"
+                                stroke-linecap="round"
+                                stroke-linejoin="round"
+                            >
+                                <line x1="12" y1="5" x2="12" y2="19"></line>
+                                <line x1="5" y1="12" x2="19" y2="12"></line>
+                            </svg>
+                            {t.add_link || "Add Link"}
+                        </button>
+                    </div>
+
+                    <div id="links-container" class="space-y-3">
+                        <!-- Links will be added here -->
+                    </div>
+                </div>
+
+                <!-- Submit Button -->
+                <button
+                    type="submit"
+                    class="w-full bg-gradient-to-r from-cyan-500 to-teal-500 hover:from-cyan-500 hover:to-teal-500 text-white font-bold py-3 px-6 rounded-xl transition-all transform hover:scale-[1.02] active:scale-[0.98] shadow-lg shadow-cyan-500/20"
+                >
+                    {t.save_changes || "Save Changes"}
+                </button>
+
+                <!-- Error/Success Messages -->
+                <div
+                    id="error-msg"
+                    class="hidden text-red-400 text-center text-sm"
+                >
+                </div>
+                <div
+                    id="success-msg"
+                    class="hidden text-green-400 text-center text-sm"
+                >
+                </div>
+
+                <!-- Danger Zone -->
+                <div class="pt-4 border-t border-gray-700">
+                    <button
+                        type="button"
+                        id="delete-btn"
+                        class="w-full bg-red-600/20 hover:bg-red-600/30 border border-red-600/50 text-red-400 font-medium py-2 px-4 rounded-xl transition-all text-sm"
+                    >
+                        {t.delete_bundle || "Delete Bundle"}
+                    </button>
+                </div>
+            </form>
+
+            <!-- No Access Message -->
+            <div
+                id="no-access"
+                class="w-full bg-red-500/10 border border-red-500/30 rounded-xl p-6 text-center hidden"
+            >
+                <p class="text-red-400 mb-4">
+                    {
+                        t.no_access ||
+                            "You don't have access to edit this bundle."
+                    }
+                </p>
+                <a
+                    href="/bundle"
+                    class="text-cyan-400 hover:text-cyan-300 text-sm"
+                    >{t.recover_bundle || "Recover Bundle"}</a
+                >
+            </div>
+        </main>
+
+        <script define:vars={{ t, bundleSlug, linksData }}>
+            const BUNDLES_KEY = "rsh_bundles";
+
+            // Get owned bundles from localStorage
+            const getOwnedBundles = () => {
+                try {
+                    return JSON.parse(
+                        localStorage.getItem(BUNDLES_KEY) || "{}",
+                    );
+                } catch {
+                    return {};
+                }
+            };
+
+            // Check if user owns this bundle
+            const ownedBundles = getOwnedBundles();
+            const bundleData = ownedBundles[bundleSlug];
+
+            const authRequired = document.getElementById("auth-required");
+            const editForm = document.getElementById("edit-form");
+            const noAccess = document.getElementById("no-access");
+
+            if (!bundleData || !bundleData.password) {
+                // No access
+                authRequired.classList.add("hidden");
+                noAccess.classList.remove("hidden");
+            } else {
+                // Has access - show form
+                authRequired.classList.add("hidden");
+                editForm.classList.remove("hidden");
+
+                // Initialize form
+                const linksContainer =
+                    document.getElementById("links-container");
+                const addLinkBtn = document.getElementById("add-link-btn");
+                const errorMsg = document.getElementById("error-msg");
+                const successMsg = document.getElementById("success-msg");
+                const themeBtns = document.querySelectorAll(".theme-btn");
+                const themeInput = document.querySelector(
+                    'input[name="theme"]',
+                );
+                const deleteBtn = document.getElementById("delete-btn");
+                const password = bundleData.password;
+
+                // Link template
+                const createLinkElement = (
+                    title = "",
+                    url = "",
+                    isHighlighted = false,
+                ) => {
+                    const div = document.createElement("div");
+                    div.className =
+                        "link-item bg-gray-900/50 border border-gray-700 rounded-xl p-4 space-y-3 transition-colors";
+                    div.innerHTML = `
+                        <div class="flex items-start gap-2">
+                            <!-- Move Buttons -->
+                            <div class="flex flex-col gap-1 pt-2 shrink-0">
+                                <button type="button" class="move-up-btn text-gray-600 hover:text-cyan-400 transition-colors" title="${t.move_up || "Move Up"}">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="18 15 12 9 6 15"></polyline></svg>
+                                </button>
+                                <button type="button" class="move-down-btn text-gray-600 hover:text-cyan-400 transition-colors" title="${t.move_down || "Move Down"}">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
+                                </button>
+                            </div>
+                            <div class="flex-1 space-y-3">
+                                <input 
+                                    type="text" 
+                                    name="link-title[]" 
+                                    value="${title}"
+                                    required 
+                                    placeholder="${t.link_title_placeholder || "Link Title"}"
+                                    class="w-full bg-gray-800/50 border border-gray-700 rounded-lg px-3 py-2 text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-cyan-500/50 focus:border-cyan-500 transition-all text-sm"
+                                />
+                                <input 
+                                    type="url" 
+                                    name="link-url[]" 
+                                    value="${url}"
+                                    required 
+                                    placeholder="${t.link_url_placeholder || "https://example.com"}"
+                                    class="w-full bg-gray-800/50 border border-gray-700 rounded-lg px-3 py-2 text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-cyan-500/50 focus:border-cyan-500 transition-all text-sm"
+                                />
+                                <div class="flex items-center gap-2 px-1">
+                                    <label class="relative inline-flex items-center cursor-pointer">
+                                        <input type="checkbox" name="link-highlight[]" class="sr-only peer" ${isHighlighted ? "checked" : ""}>
+                                        <div class="w-7 h-4 bg-gray-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-3 after:w-3 after:transition-all peer-checked:bg-cyan-600"></div>
+                                    </label>
+                                    <span class="text-xs text-gray-500" title="${t.highlight_desc || "Make this link stand out"}">${t.highlight || "Highlight"}</span>
+                                </div>
+                            </div>
+                            <button type="button" class="remove-link-btn text-gray-500 hover:text-red-400 p-2 transition-colors" title="Remove">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <line x1="18" y1="6" x2="6" y2="18"></line>
+                                    <line x1="6" y1="6" x2="18" y2="18"></line>
+                                </svg>
+                            </button>
+                        </div>
+                    `;
+
+                    div.querySelector(".remove-link-btn").addEventListener(
+                        "click",
+                        () => {
+                            div.remove();
+                        },
+                    );
+
+                    div.querySelector(".move-up-btn").addEventListener(
+                        "click",
+                        () => {
+                            const prev = div.previousElementSibling;
+                            if (prev) {
+                                div.parentElement.insertBefore(div, prev);
+                            }
+                        },
+                    );
+
+                    div.querySelector(".move-down-btn").addEventListener(
+                        "click",
+                        () => {
+                            const next = div.nextElementSibling;
+                            if (next) {
+                                div.parentElement.insertBefore(next, div);
+                            }
+                        },
+                    );
+
+                    return div;
+                };
+
+                // Load existing links
+                const existingLinks = JSON.parse(linksData);
+                existingLinks.forEach((link) => {
+                    linksContainer.appendChild(
+                        createLinkElement(
+                            link.title,
+                            link.url,
+                            link.isHighlighted,
+                        ),
+                    );
+                });
+
+                // If no links, add empty one
+                if (existingLinks.length === 0) {
+                    linksContainer.appendChild(createLinkElement());
+                }
+
+                // Add link button
+                addLinkBtn.addEventListener("click", () => {
+                    linksContainer.appendChild(createLinkElement());
+                });
+
+                // Theme/Style handlers
+                const setupStyleSelector = (
+                    btnClass,
+                    inputName,
+                    activeClass = "border-white",
+                ) => {
+                    const btns = document.querySelectorAll(`.${btnClass}`);
+                    const input = document.querySelector(
+                        `input[name="${inputName}"]`,
+                    );
+
+                    if (!btns.length || !input) return;
+
+                    btns.forEach((btn) => {
+                        btn.addEventListener("click", () => {
+                            btns.forEach((b) => {
+                                if (activeClass.includes("border-")) {
+                                    // For color themes
+                                    b.classList.remove(
+                                        "active",
+                                        "border-white",
+                                    );
+                                    b.classList.add("border-transparent");
+                                } else {
+                                    // For other styles
+                                    b.classList.remove("border-white");
+                                    b.classList.add(
+                                        b.classList.contains("bg-white/10")
+                                            ? "border-white"
+                                            : "border-transparent",
+                                    );
+                                    // Reset specialized borders
+                                    if (b.dataset.cardstyle === "outline")
+                                        b.classList.remove(
+                                            "border-white",
+                                            "border-gray-600",
+                                        );
+                                    if (b.dataset.cardstyle === "outline")
+                                        b.classList.add("border-gray-600");
+                                }
+                            });
+
+                            // Set active state
+                            if (activeClass.includes("border-")) {
+                                btn.classList.add("active", "border-white");
+                                btn.classList.remove("border-transparent");
+                            }
+
+                            // Simple active state management for all style buttons
+                            btns.forEach((b) => {
+                                b.classList.remove(
+                                    "ring-2",
+                                    "ring-offset-2",
+                                    "ring-cyan-500",
+                                    "ring-offset-gray-900",
+                                );
+                            });
+                            btn.classList.add(
+                                "ring-2",
+                                "ring-offset-2",
+                                "ring-cyan-500",
+                                "ring-offset-gray-900",
+                            );
+
+                            input.value = btn.dataset[inputName.toLowerCase()];
+                        });
+                    });
+                };
+
+                // Initialize selectors
+                // We use existing themeBtns logic for theme, and add new ones for styles
+
+                // Background Style
+                const bgStyleBtns = document.querySelectorAll(".bgstyle-btn");
+                const bgStyleInput = document.querySelector(
+                    'input[name="bgStyle"]',
+                );
+                bgStyleBtns.forEach((btn) => {
+                    btn.addEventListener("click", () => {
+                        bgStyleBtns.forEach((b) =>
+                            b.classList.remove(
+                                "ring-2",
+                                "ring-offset-2",
+                                "ring-cyan-500",
+                                "ring-offset-gray-900",
+                            ),
+                        );
+                        btn.classList.add(
+                            "ring-2",
+                            "ring-offset-2",
+                            "ring-cyan-500",
+                            "ring-offset-gray-900",
+                        );
+                        bgStyleInput.value = btn.dataset.bgstyle;
+                    });
+                });
+
+                // Card Style
+                const cardStyleBtns =
+                    document.querySelectorAll(".cardstyle-btn");
+                const cardStyleInput = document.querySelector(
+                    'input[name="cardStyle"]',
+                );
+                cardStyleBtns.forEach((btn) => {
+                    btn.addEventListener("click", () => {
+                        cardStyleBtns.forEach((b) =>
+                            b.classList.remove(
+                                "ring-2",
+                                "ring-offset-2",
+                                "ring-cyan-500",
+                                "ring-offset-gray-900",
+                            ),
+                        );
+                        btn.classList.add(
+                            "ring-2",
+                            "ring-offset-2",
+                            "ring-cyan-500",
+                            "ring-offset-gray-900",
+                        );
+                        cardStyleInput.value = btn.dataset.cardstyle;
+                    });
+                });
+
+                // Button Style
+                const buttonStyleBtns =
+                    document.querySelectorAll(".buttonstyle-btn");
+                const buttonStyleInput = document.querySelector(
+                    'input[name="buttonStyle"]',
+                );
+                buttonStyleBtns.forEach((btn) => {
+                    btn.addEventListener("click", () => {
+                        buttonStyleBtns.forEach((b) =>
+                            b.classList.remove(
+                                "ring-2",
+                                "ring-offset-2",
+                                "ring-cyan-500",
+                                "ring-offset-gray-900",
+                            ),
+                        );
+                        btn.classList.add(
+                            "ring-2",
+                            "ring-offset-2",
+                            "ring-cyan-500",
+                            "ring-offset-gray-900",
+                        );
+                        buttonStyleInput.value = btn.dataset.buttonstyle;
+                    });
+                });
+
+                // Theme selection
+                themeBtns.forEach((btn) => {
+                    btn.addEventListener("click", () => {
+                        themeBtns.forEach((b) => {
+                            b.classList.remove("border-white");
+                            b.classList.add("border-transparent");
+                        });
+                        btn.classList.remove("border-transparent");
+                        btn.classList.add("border-white");
+                        themeInput.value = btn.dataset.theme;
+                    });
+                });
+
+                // Form submission
+                editForm.addEventListener("submit", async (e) => {
+                    e.preventDefault();
+                    errorMsg.classList.add("hidden");
+                    successMsg.classList.add("hidden");
+
+                    const formData = new FormData(editForm);
+                    const title = formData.get("title");
+                    const description = formData.get("description");
+                    const theme = formData.get("theme");
+                    const bgStyle = formData.get("bgStyle");
+                    const cardStyle = formData.get("cardStyle");
+                    const buttonStyle = formData.get("buttonStyle");
+
+                    // Get links
+                    const linkElements =
+                        linksContainer.querySelectorAll(".link-item");
+                    const links = Array.from(linkElements)
+                        .map((el) => {
+                            const title = el.querySelector(
+                                'input[name="link-title[]"]',
+                            ).value;
+                            const url = el.querySelector(
+                                'input[name="link-url[]"]',
+                            ).value;
+                            const isHighlighted = el.querySelector(
+                                'input[name="link-highlight[]"]',
+                            ).checked;
+                            return { title, url, isHighlighted };
+                        })
+                        .filter((l) => l.title && l.url);
+
+                    if (links.length === 0) {
+                        errorMsg.textContent =
+                            t.at_least_one_link ||
+                            "Please add at least one link";
+                        errorMsg.classList.remove("hidden");
+                        return;
+                    }
+
+                    try {
+                        const res = await fetch("/api/bundle", {
+                            method: "PUT",
+                            headers: { "Content-Type": "application/json" },
+                            body: JSON.stringify({
+                                slug: bundleSlug,
+                                password,
+                                title: title.trim(),
+                                description: description?.trim(),
+                                theme,
+                                bgStyle,
+                                cardStyle,
+                                buttonStyle,
+                                links,
+                            }),
+                        });
+
+                        const data = await res.json();
+
+                        if (!res.ok) {
+                            throw new Error(
+                                data.error || t.error || "Something went wrong",
+                            );
+                        }
+
+                        successMsg.textContent =
+                            t.changes_saved || "Changes saved successfully!";
+                        successMsg.classList.remove("hidden");
+
+                        setTimeout(() => {
+                            successMsg.classList.add("hidden");
+                        }, 3000);
+                    } catch (err) {
+                        errorMsg.textContent = err.message;
+                        errorMsg.classList.remove("hidden");
+                    }
+                });
+
+                // Delete bundle
+                deleteBtn.addEventListener("click", async () => {
+                    if (
+                        !confirm(
+                            t.delete_confirm ||
+                                "Are you sure you want to delete this bundle? This cannot be undone.",
+                        )
+                    ) {
+                        return;
+                    }
+
+                    try {
+                        const res = await fetch("/api/bundle", {
+                            method: "DELETE",
+                            headers: { "Content-Type": "application/json" },
+                            body: JSON.stringify({
+                                slug: bundleSlug,
+                                password,
+                            }),
+                        });
+
+                        const data = await res.json();
+
+                        if (!res.ok) {
+                            throw new Error(
+                                data.error || t.error || "Something went wrong",
+                            );
+                        }
+
+                        // Remove from localStorage
+                        delete ownedBundles[bundleSlug];
+                        localStorage.setItem(
+                            BUNDLES_KEY,
+                            JSON.stringify(ownedBundles),
+                        );
+
+                        // Redirect to home
+                        window.location.href = "/bundle";
+                    } catch (err) {
+                        errorMsg.textContent = err.message;
+                        errorMsg.classList.remove("hidden");
+                    }
+                });
+            }
+        </script>
+    </body>
+</html>

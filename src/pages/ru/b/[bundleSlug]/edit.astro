@@ -1,0 +1,11 @@
+---
+import BundleEditor from "../../../../components/BundleEditor.astro";
+const { bundleSlug } = Astro.params;
+
+// Handle missing slug
+if (!bundleSlug) {
+    return Astro.redirect("/ru");
+}
+---
+
+<BundleEditor bundleSlug={bundleSlug} lang="ru" />

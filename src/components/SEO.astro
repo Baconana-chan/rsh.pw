@@ -1,0 +1,75 @@
+---
+export interface Props {
+    title?: string;
+    description?: string;
+    image?: string;
+    type?: string;
+    url?: string;
+}
+
+const {
+    title = "rsh.pw | Minimalist URL Shortener",
+    description = "Simple. Fast. Open. A privacy-focused URL shortener and link bundle creator. Create short links and linktree-style bundles instantly.",
+    image = "/favicon.svg", // Fallback to favicon for now if no OG image
+    type = "website",
+    url = Astro.url.href,
+} = Astro.props;
+
+const siteName = "rsh.pw";
+const isRu = Astro.url.pathname.startsWith('/ru');
+const canonicalUrl = new URL(Astro.url.pathname, Astro.site);
+
+// Hreflang logic
+const alternateEn = new URL(Astro.url.pathname.replace(/^\/ru/, ''), Astro.site);
+const alternateRu = new URL('/ru' + Astro.url.pathname.replace(/^\/ru/, ''), Astro.site);
+---
+
+<!-- Global Metadata -->
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+<meta name="generator" content={Astro.generator} />
+
+<!-- Primary Meta Tags -->
+<title>{title}</title>
+<meta name="title" content={title} />
+<meta name="description" content={description} />
+<meta name="theme-color" content="#9333ea" />
+
+<!-- Multilingual SEO -->
+<link rel="alternate" hreflang="en" href={alternateEn} />
+<link rel="alternate" hreflang="ru" href={alternateRu} />
+<link rel="alternate" hreflang="x-default" href={alternateEn} />
+
+<!-- Open Graph / Facebook -->
+<meta property="og:type" content={type} />
+<meta property="og:url" content={url} />
+<meta property="og:title" content={title} />
+<meta property="og:description" content={description} />
+<meta property="og:image" content={new URL(image, Astro.url)} />
+<meta property="og:site_name" content={siteName} />
+
+<!-- Twitter -->
+<meta property="twitter:card" content="summary" />
+<meta property="twitter:url" content={url} />
+<meta property="twitter:title" content={title} />
+<meta property="twitter:description" content={description} />
+<meta property="twitter:image" content={new URL(image, Astro.url)} />
+
+<!-- Canonical -->
+<link rel="canonical" href={canonicalUrl} />
+
+<!-- JSON-LD Structured Data for Home -->
+{Astro.url.pathname === "/" || Astro.url.pathname === "/ru" || Astro.url.pathname === "/ru/" ? (
+  <script type="application/ld+json" is:inline>
+    {
+      "@context": "https://schema.org",
+      "@type": "WebApplication",
+      "name": "rsh.pw",
+      "url": "https://rsh.pw",
+      "description": "Minimalist URL Shortener and Link Bundle Creator",
+      "applicationCategory": "Utility",
+      "operatingSystem": "All"
+    }
+  </script>
+) : null}

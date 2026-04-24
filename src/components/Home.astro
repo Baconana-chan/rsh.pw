@@ -1,0 +1,1081 @@
+---
+import { ui, defaultLang } from "../i18n/ui";
+import SEO from "./SEO.astro";
+
+const { lang = defaultLang } = Astro.props;
+const t = ui[lang as keyof typeof ui];
+---
+
+<html lang={lang}>
+    <head>
+        <SEO title={`${t.title} - ${t.subtitle}`} description={t.about_text} />
+        <style>
+            /* Custom gradient animation */
+            @keyframes gradient {
+                0% {
+                    background-position: 0% 50%;
+                }
+                50% {
+                    background-position: 100% 50%;
+                }
+                100% {
+                    background-position: 0% 50%;
+                }
+            }
+            .animate-gradient {
+                background-size: 200% 200%;
+                animation: gradient 15s ease infinite;
+            }
+        </style>
+    </head>
+    <body
+        class="bg-gray-900 text-white h-screen flex flex-col items-center justify-center font-sans antialiased selection:bg-cyan-500 selection:text-white"
+    >
+        <div
+            class="absolute top-4 right-4 flex gap-4 text-sm text-gray-400 items-center"
+        >
+            <a href="/bundle" class="hover:text-white transition-colors"
+                >{t.bundles || "Bundles"}</a
+            >
+            <div class="w-px h-4 bg-gray-700"></div>
+            <button id="about-btn" class="hover:text-white transition-colors"
+                >{t.about}</button
+            >
+            <div class="w-px h-4 bg-gray-700"></div>
+            <button id="history-btn" class="hover:text-white transition-colors"
+                >{t.history}</button
+            >
+            <div class="w-px h-4 bg-gray-700"></div>
+            <a
+                href="/"
+                class={`hover:text-white transition-colors ${lang === "en" ? "text-white font-bold" : ""}`}
+                >EN</a
+            >
+            <a
+                href="/ru"
+                class={`hover:text-white transition-colors ${lang === "ru" ? "text-white font-bold" : ""}`}
+                >RU</a
+            >
+        </div>
+
+        <!-- About Modal -->
+        <div
+            id="about-modal"
+            class="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4 opacity-0 transition-opacity duration-300"
+        >
+            <div
+                class="bg-gray-900 border border-gray-700 rounded-2xl w-full max-w-md p-6 shadow-2xl transform scale-95 transition-transform duration-300"
+                id="about-modal-content"
+            >
+                <div class="flex justify-between items-center mb-6">
+                    <h2 class="text-xl font-bold text-white">
+                        {t.about_title}
+                    </h2>
+                    <button
+                        id="close-about-modal"
+                        class="text-gray-400 hover:text-white transition-colors"
+                    >
+                        <svg
+                            xmlns="http://www.w3.org/2000/svg"
+                            width="24"
+                            height="24"
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            stroke="currentColor"
+                            stroke-width="2"
+                            stroke-linecap="round"
+                            stroke-linejoin="round"
+                            ><line x1="18" y1="6" x2="6" y2="18"></line><line
+                                x1="6"
+                                y1="6"
+                                x2="18"
+                                y2="18"></line></svg
+                        >
+                    </button>
+                </div>
+
+                <div class="space-y-4 text-gray-300">
+                    <p>{t.about_text}</p>
+                    <p>
+                        {t.project_by}
+                        <a
+                            href="https://lorachi.xyz"
+                            target="_blank"
+                            class="text-cyan-400 hover:text-cyan-300 transition-colors font-bold"
+                            >lorachi.xyz</a
+                        >
+                    </p>
+                </div>
+            </div>
+        </div>
+
+        <!-- History Modal -->
+        <div
+            id="history-modal"
+            class="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4 opacity-0 transition-opacity duration-300"
+        >
+            <div
+                class="bg-gray-900 border border-gray-700 rounded-2xl w-full max-w-md p-6 shadow-2xl transform scale-95 transition-transform duration-300"
+                id="modal-content"
+            >
+                <div class="flex justify-between items-center mb-6">
+                    <h2 class="text-xl font-bold text-white">{t.your_links}</h2>
+                    <button
+                        id="close-modal"
+                        class="text-gray-400 hover:text-white transition-colors"
+                    >
+                        <svg
+                            xmlns="http://www.w3.org/2000/svg"
+                            width="24"
+                            height="24"
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            stroke="currentColor"
+                            stroke-width="2"
+                            stroke-linecap="round"
+                            stroke-linejoin="round"
+                            ><line x1="18" y1="6" x2="6" y2="18"></line><line
+                                x1="6"
+                                y1="6"
+                                x2="18"
+                                y2="18"></line></svg
+                        >
+                    </button>
+                </div>
+
+                <div
+                    id="history-list"
+                    class="space-y-3 max-h-[60vh] overflow-y-auto pr-2 custom-scrollbar"
+                >
+                    <!-- Links will be injected here -->
+                    <p class="text-gray-500 text-center py-4">{t.no_links}</p>
+                </div>
+
+                <div
+                    class="mt-6 pt-4 border-t border-gray-800 flex justify-end"
+                >
+                    <button
+                        id="clear-history"
+                        class="text-sm text-red-400 hover:text-red-300 transition-colors"
+                        >{t.clear_history}</button
+                    >
+                </div>
+            </div>
+        </div>
+
+        <main class="w-full max-w-lg p-6 flex flex-col items-center gap-8">
+            <div class="text-center space-y-2">
+                <h1
+                    class="text-6xl font-black tracking-tighter bg-clip-text text-transparent bg-gradient-to-r from-cyan-300 to-teal-400 animate-gradient"
+                >
+                    {t.title}
+                </h1>
+                <p class="text-gray-400 text-lg font-light tracking-wide">
+                    {t.subtitle}
+                </p>
+            </div>
+
+            <div
+                class="w-full space-y-4 bg-gray-800/50 p-8 rounded-2xl border border-gray-700/50 backdrop-blur-sm shadow-xl"
+            >
+                <!-- Tabs -->
+                <div
+                    class="flex p-1 bg-gray-900/50 rounded-xl mb-6 border border-gray-700/50"
+                >
+                    <button
+                        id="tab-single-btn"
+                        class="flex-1 py-2 text-sm font-bold rounded-lg bg-cyan-600 text-white shadow-sm transition-all"
+                        >{t.single || "Single"}</button
+                    >
+                    <button
+                        id="tab-bulk-btn"
+                        class="flex-1 py-2 text-sm font-bold rounded-lg text-gray-400 hover:text-white transition-all"
+                        >{t.bulk || "Bulk"}</button
+                    >
+                </div>
+
+                <!-- Shared Settings -->
+                <div class="mb-2">
+                    <div class="flex items-center justify-between px-1">
+                        <button
+                            type="button"
+                            id="settings-toggle"
+                            class="flex items-center gap-2 text-xs text-gray-400 hover:text-white transition-colors focus:outline-none hover:bg-gray-800/50 px-2 py-1 rounded-lg"
+                        >
+                            <svg
+                                xmlns="http://www.w3.org/2000/svg"
+                                width="14"
+                                height="14"
+                                viewBox="0 0 24 24"
+                                fill="none"
+                                stroke="currentColor"
+                                stroke-width="2"
+                                stroke-linecap="round"
+                                stroke-linejoin="round"
+                                ><circle cx="12" cy="12" r="3"></circle><path
+                                    d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"
+                                ></path></svg
+                            >
+                            {t.settings || "Settings"}
+                        </button>
+                    </div>
+
+                    <!-- Settings Panel -->
+                    <div
+                        id="settings-panel"
+                        class="hidden space-y-4 bg-gray-900/40 p-4 rounded-xl border border-gray-700/50 mt-2"
+                    >
+                        <!-- Expiration -->
+                        <div class="space-y-2">
+                            <label
+                                class="text-xs text-gray-500 uppercase tracking-wider font-bold"
+                                >{t.expiration || "Expiration"}</label
+                            >
+                            <div class="grid grid-cols-4 gap-2">
+                                <button
+                                    type="button"
+                                    class="setting-option expiration-option bg-cyan-600 text-white p-2 rounded-lg text-xs font-medium transition-colors border border-transparent shadow-sm"
+                                    data-value="">{t.never || "Never"}</button
+                                >
+                                <button
+                                    type="button"
+                                    class="setting-option expiration-option bg-gray-800 text-gray-400 hover:bg-gray-700 hover:text-gray-200 p-2 rounded-lg text-xs font-medium transition-colors border border-gray-700"
+                                    data-value="1h"
+                                    >{t["1_hour"] || "1 Hour"}</button
+                                >
+                                <button
+                                    type="button"
+                                    class="setting-option expiration-option bg-gray-800 text-gray-400 hover:bg-gray-700 hover:text-gray-200 p-2 rounded-lg text-xs font-medium transition-colors border border-gray-700"
+                                    data-value="1d"
+                                    >{t["1_day"] || "1 Day"}</button
+                                >
+                                <button
+                                    type="button"
+                                    class="setting-option expiration-option bg-gray-800 text-gray-400 hover:bg-gray-700 hover:text-gray-200 p-2 rounded-lg text-xs font-medium transition-colors border border-gray-700"
+                                    data-value="1w"
+                                    >{t["1_week"] || "1 Week"}</button
+                                >
+                            </div>
+                        </div>
+                        <!-- Max Uses -->
+                        <div class="space-y-2">
+                            <label
+                                class="text-xs text-gray-500 uppercase tracking-wider font-bold"
+                                >{t.max_uses || "Max Uses"}</label
+                            >
+                            <div class="grid grid-cols-2 gap-2">
+                                <button
+                                    type="button"
+                                    class="setting-option max-uses-option bg-cyan-600 text-white p-2 rounded-lg text-xs font-medium transition-colors border border-transparent shadow-sm"
+                                    data-value="0"
+                                    >{t.unlimited || "Unlimited"}</button
+                                >
+                                <button
+                                    type="button"
+                                    class="setting-option max-uses-option bg-gray-800 text-gray-400 hover:bg-gray-700 hover:text-gray-200 p-2 rounded-lg text-xs font-medium transition-colors border border-gray-700"
+                                    data-value="1"
+                                    >{t.one_time || "One-time"}</button
+                                >
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <form id="shorten-form" class="flex flex-col gap-4">
+                    <div>
+                        <input
+                            type="url"
+                            name="url"
+                            required
+                            placeholder={t.placeholder}
+                            class="w-full bg-gray-900/50 border border-gray-700 rounded-xl px-4 py-3 text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-cyan-500/50 focus:border-cyan-500 transition-all"
+                        />
+                    </div>
+                    <div>
+                        <input
+                            type="text"
+                            name="slug"
+                            placeholder={t.custom_slug}
+                            pattern="[a-zA-Z0-9-_]+"
+                            title="Alphanumeric, dashes and underscores only"
+                            class="w-full bg-gray-900/50 border border-gray-700 rounded-xl px-4 py-3 text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-cyan-500/50 focus:border-cyan-500 transition-all text-sm"
+                        />
+                    </div>
+
+                    <input
+                        type="hidden"
+                        name="expiration"
+                        class="expiration-input"
+                        value=""
+                    />
+                    <input
+                        type="hidden"
+                        name="maxUses"
+                        class="max-uses-input"
+                        value="0"
+                    />
+
+                    <button
+                        type="submit"
+                        class="w-full bg-gradient-to-r from-cyan-500 to-teal-500 hover:from-cyan-500 hover:to-teal-500 text-white font-bold py-3 px-6 rounded-xl transition-all transform hover:scale-[1.02] active:scale-[0.98] shadow-lg shadow-cyan-500/20"
+                    >
+                        {t.shorten}
+                    </button>
+                </form>
+
+                <form id="bulk-form" class="hidden flex flex-col gap-4">
+                    <textarea
+                        name="urls"
+                        required
+                        rows="5"
+                        placeholder={t.urls_placeholder || "Enter URLs"}
+                        class="w-full bg-gray-900/50 border border-gray-700 rounded-xl px-4 py-3 text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-cyan-500/50 focus:border-cyan-500 transition-all font-mono text-sm resize-none custom-scrollbar"
+                    ></textarea>
+
+                    <input
+                        type="hidden"
+                        name="expiration"
+                        class="expiration-input"
+                        value=""
+                    />
+                    <input
+                        type="hidden"
+                        name="maxUses"
+                        class="max-uses-input"
+                        value="0"
+                    />
+
+                    <button
+                        type="submit"
+                        class="w-full bg-gradient-to-r from-cyan-500 to-teal-500 hover:from-cyan-500 hover:to-teal-500 text-white font-bold py-3 px-6 rounded-xl transition-all transform hover:scale-[1.02] active:scale-[0.98] shadow-lg shadow-cyan-500/20"
+                    >
+                        {t.bulk_shorten || "Shorten All"}
+                    </button>
+                </form>
+
+                <div
+                    id="result"
+                    class="hidden pt-4 border-t border-gray-700/50"
+                >
+                    <div
+                        class="flex items-center gap-2 bg-gray-900/80 p-3 rounded-xl border border-gray-700"
+                    >
+                        <a
+                            id="short-link"
+                            href="#"
+                            target="_blank"
+                            class="flex-1 text-cyan-400 hover:text-cyan-300 truncate transition-colors"
+                        ></a>
+                        <button
+                            id="qr-btn"
+                            class="text-gray-400 hover:text-white p-2 rounded-lg hover:bg-gray-800 transition-colors"
+                            title={t.qr_code || "QR Code"}
+                            type="button"
+                        >
+                            <svg
+                                xmlns="http://www.w3.org/2000/svg"
+                                width="20"
+                                height="20"
+                                viewBox="0 0 24 24"
+                                fill="none"
+                                stroke="currentColor"
+                                stroke-width="2"
+                                stroke-linecap="round"
+                                stroke-linejoin="round"
+                                ><rect x="3" y="3" width="7" height="7"
+                                ></rect><rect x="14" y="3" width="7" height="7"
+                                ></rect><rect x="14" y="14" width="7" height="7"
+                                ></rect><path d="M3 14h7v7H3z"></path></svg
+                            >
+                        </button>
+                        <button
+                            id="copy-btn"
+                            class="text-gray-400 hover:text-white p-2 rounded-lg hover:bg-gray-800 transition-colors"
+                            title={t.copy}
+                        >
+                            <svg
+                                xmlns="http://www.w3.org/2000/svg"
+                                width="20"
+                                height="20"
+                                viewBox="0 0 24 24"
+                                fill="none"
+                                stroke="currentColor"
+                                stroke-width="2"
+                                stroke-linecap="round"
+                                stroke-linejoin="round"
+                                ><rect
+                                    x="9"
+                                    y="9"
+                                    width="13"
+                                    height="13"
+                                    rx="2"
+                                    ry="2"></rect><path
+                                    d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"
+                                ></path></svg
+                            >
+                        </button>
+                    </div>
+                </div>
+
+                <div
+                    id="bulk-result"
+                    class="hidden pt-4 border-t border-gray-700/50 space-y-3"
+                >
+                    <h3 class="text-white font-bold text-sm">
+                        {t.bulk_results || "Bulk Results"}
+                    </h3>
+                    <div
+                        id="bulk-list"
+                        class="space-y-2 max-h-[300px] overflow-y-auto custom-scrollbar pr-1"
+                    >
+                    </div>
+                </div>
+
+                <div
+                    id="error-msg"
+                    class="hidden text-red-400 text-center text-sm"
+                >
+                </div>
+                <div
+                    id="processing-msg"
+                    class="hidden text-gray-400 text-center text-sm"
+                >
+                    {t.processing || "Processing..."}
+                </div>
+            </div>
+
+            <footer class="text-gray-600 text-sm font-mono">
+                {t.footer}
+            </footer>
+        </main>
+
+        <!-- QR Modal -->
+        <div
+            id="qr-modal"
+            class="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4 opacity-0 transition-opacity duration-300"
+        >
+            <div
+                class="bg-gray-900 border border-gray-700 rounded-2xl w-full max-w-sm p-6 shadow-2xl transform scale-95 transition-transform duration-300"
+                id="qr-modal-content"
+            >
+                <div class="flex justify-between items-center mb-6">
+                    <h2 class="text-xl font-bold text-white">
+                        {t.qr_code || "QR Code"}
+                    </h2>
+                    <button
+                        id="close-qr-modal"
+                        class="text-gray-400 hover:text-white transition-colors"
+                    >
+                        <svg
+                            xmlns="http://www.w3.org/2000/svg"
+                            width="24"
+                            height="24"
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            stroke="currentColor"
+                            stroke-width="2"
+                            stroke-linecap="round"
+                            stroke-linejoin="round"
+                            ><line x1="18" y1="6" x2="6" y2="18"></line><line
+                                x1="6"
+                                y1="6"
+                                x2="18"
+                                y2="18"></line></svg
+                        >
+                    </button>
+                </div>
+                <div class="flex flex-col items-center gap-6">
+                    <div class="bg-white p-4 rounded-xl">
+                        <canvas id="qr-canvas"></canvas>
+                    </div>
+                    <a
+                        id="download-qr"
+                        href="#"
+                        download="qrcode.png"
+                        class="w-full bg-gradient-to-r from-cyan-500 to-teal-500 hover:from-cyan-500 hover:to-teal-500 text-white font-bold py-3 px-6 rounded-xl transition-all text-center"
+                    >
+                        {t.download_qr || "Download QR"}
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <script>
+            import QRCode from "qrcode";
+
+            const qrBtn = document.getElementById(
+                "qr-btn",
+            ) as HTMLButtonElement | null;
+            const qrModal = document.getElementById(
+                "qr-modal",
+            ) as HTMLDivElement | null;
+            const qrModalContent = document.getElementById(
+                "qr-modal-content",
+            ) as HTMLDivElement | null;
+            const closeQrModal = document.getElementById(
+                "close-qr-modal",
+            ) as HTMLButtonElement | null;
+            const qrCanvas = document.getElementById(
+                "qr-canvas",
+            ) as HTMLCanvasElement | null;
+            const downloadQr = document.getElementById(
+                "download-qr",
+            ) as HTMLAnchorElement | null;
+            const shortLink = document.getElementById(
+                "short-link",
+            ) as HTMLAnchorElement | null;
+
+            const openModal = () => {
+                if (!qrModal || !qrModalContent) return;
+                qrModal.classList.remove("hidden");
+                setTimeout(() => {
+                    qrModal.classList.remove("opacity-0");
+                    qrModalContent.classList.remove("scale-95");
+                    qrModalContent.classList.add("scale-100");
+                }, 10);
+            };
+
+            const closeModal = () => {
+                if (!qrModal || !qrModalContent) return;
+                qrModal.classList.add("opacity-0");
+                qrModalContent.classList.remove("scale-100");
+                qrModalContent.classList.add("scale-95");
+                setTimeout(() => {
+                    qrModal.classList.add("hidden");
+                }, 300);
+            };
+
+            if (qrBtn) {
+                qrBtn.addEventListener("click", async () => {
+                    if (!shortLink || !shortLink.href) return;
+                    if (!qrCanvas) return;
+
+                    try {
+                        await QRCode.toCanvas(qrCanvas, shortLink.href, {
+                            width: 200,
+                            margin: 2,
+                            color: {
+                                dark: "#000000",
+                                light: "#ffffff",
+                            },
+                        });
+
+                        if (downloadQr) {
+                            downloadQr.href = qrCanvas.toDataURL("image/png");
+                        }
+
+                        openModal();
+                    } catch (err) {
+                        console.error(err);
+                    }
+                });
+            }
+
+            if (closeQrModal) {
+                closeQrModal.addEventListener("click", closeModal);
+            }
+            if (qrModal) {
+                qrModal.addEventListener("click", (e) => {
+                    if (e.target === qrModal) closeModal();
+                });
+            }
+        </script>
+
+        <script define:vars={{ t }}>
+            const form = document.getElementById("shorten-form");
+            const bulkForm = document.getElementById("bulk-form");
+            const result = document.getElementById("result");
+            const bulkResult = document.getElementById("bulk-result");
+            const bulkList = document.getElementById("bulk-list");
+            const processingMsg = document.getElementById("processing-msg");
+
+            const shortLink = document.getElementById("short-link");
+            const copyBtn = document.getElementById("copy-btn");
+            const errorMsg = document.getElementById("error-msg");
+
+            const tabSingleBtn = document.getElementById("tab-single-btn");
+            const tabBulkBtn = document.getElementById("tab-bulk-btn");
+
+            // About Modal Elements
+            const aboutBtn = document.getElementById("about-btn");
+            const aboutModal = document.getElementById("about-modal");
+            const aboutModalContent = document.getElementById(
+                "about-modal-content",
+            );
+            const closeAboutModal =
+                document.getElementById("close-about-modal");
+
+            // History Modal Elements
+            const historyBtn = document.getElementById("history-btn");
+            const historyModal = document.getElementById("history-modal");
+            const modalContent = document.getElementById("modal-content");
+            const closeModal = document.getElementById("close-modal");
+            const historyList = document.getElementById("history-list");
+            const clearHistoryBtn = document.getElementById("clear-history");
+
+            // LocalStorage Key
+            const STORAGE_KEY = "rsh_history";
+
+            // Helper to get history
+            const getHistory = () => {
+                try {
+                    return JSON.parse(
+                        localStorage.getItem(STORAGE_KEY) || "[]",
+                    );
+                } catch {
+                    return [];
+                }
+            };
+
+            // Helper to save history
+            const saveToHistory = (linkData) => {
+                const history = getHistory();
+                // Add to beginning, limit to 50 items
+                const newHistory = [linkData, ...history].slice(0, 50);
+                localStorage.setItem(STORAGE_KEY, JSON.stringify(newHistory));
+            };
+
+            // Render History
+            const renderHistory = () => {
+                const history = getHistory();
+                historyList.innerHTML = "";
+
+                if (history.length === 0) {
+                    historyList.innerHTML = `<p class="text-gray-500 text-center py-4">${t.no_links}</p>`;
+                    return;
+                }
+
+                history.forEach((item, index) => {
+                    const div = document.createElement("div");
+                    div.className =
+                        "bg-gray-800/50 p-3 rounded-xl border border-gray-700 flex flex-col gap-2 group hover:border-cyan-500/50 transition-colors relative";
+
+                    const date = new Date(item.timestamp).toLocaleDateString();
+                    const isExpired =
+                        item.expiresAt && new Date(item.expiresAt) < new Date();
+
+                    if (isExpired) {
+                        div.classList.add("opacity-60", "grayscale");
+                    }
+
+                    let metaInfo = "";
+                    if (item.expiresAt) {
+                        const timeDiff =
+                            new Date(item.expiresAt).getTime() -
+                            new Date().getTime();
+                        const expiredText =
+                            timeDiff < 0
+                                ? t.expired || "Expired"
+                                : new Date(item.expiresAt).toLocaleString();
+                        metaInfo += `<span class="flex items-center gap-1 text-yellow-500" title="${t.expiration}"><svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg> ${expiredText}</span>`;
+                    }
+                    if (item.maxUses && item.maxUses > 0) {
+                        metaInfo += `<span class="flex items-center gap-1 text-blue-400" title="${t.max_uses}"><svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a2 2 0 0 0-2-2h-3"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg> ${item.maxUses}</span>`;
+                    }
+
+                    div.innerHTML = `
+                        <div class="flex justify-between items-start">
+                            <a href="${item.shortUrl}" target="_blank" class="text-cyan-400 font-bold hover:text-cyan-300 transition-colors truncate max-w-[180px]">${item.shortUrl.replace(/^https?:\/\//, "")}</a>
+                            <div class="flex items-center gap-2">
+                                <span class="text-xs text-gray-500">${date}</span>
+                                <button class="delete-item-btn text-gray-500 hover:text-red-400 transition-colors" data-index="${index}" title="Delete">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
+                                </button>
+                            </div>
+                        </div>
+                        <div class="text-xs text-gray-400 truncate" title="${item.originalUrl}">${item.originalUrl}</div>
+                        
+                        ${metaInfo ? `<div class="text-xs flex flex-wrap gap-3 mt-1">${metaInfo}</div>` : ""}
+
+                        <button class="copy-history-btn text-xs bg-gray-700 hover:bg-gray-600 text-white py-1 px-2 rounded transition-colors self-end mt-1" data-url="${item.shortUrl}">
+                            ${t.copy}
+                        </button>
+                    `;
+                    historyList.appendChild(div);
+                });
+
+                // Add event listeners
+                document
+                    .querySelectorAll(".copy-history-btn")
+                    .forEach((btn) => {
+                        btn.addEventListener("click", (e) => {
+                            const target = e.target;
+                            const url = target.dataset.url || "";
+                            navigator.clipboard.writeText(url).then(() => {
+                                const originalText = target.textContent;
+                                target.textContent = t.copied;
+                                setTimeout(() => {
+                                    target.textContent = originalText;
+                                }, 2000);
+                            });
+                        });
+                    });
+
+                // Add delete listeners
+                document.querySelectorAll(".delete-item-btn").forEach((btn) => {
+                    btn.addEventListener("click", (e) => {
+                        const target = e.currentTarget;
+                        const indexStr = target.dataset.index;
+                        if (indexStr !== undefined) {
+                            const index = parseInt(indexStr);
+                            const history = getHistory();
+                            history.splice(index, 1);
+                            localStorage.setItem(
+                                STORAGE_KEY,
+                                JSON.stringify(history),
+                            );
+                            renderHistory();
+                        }
+                    });
+                });
+            };
+
+            // Modal Logic
+            const openModal = (modal, content) => {
+                modal.classList.remove("hidden");
+                // Small delay to allow display:block to apply before opacity transition
+                setTimeout(() => {
+                    modal.classList.remove("opacity-0");
+                    content.classList.remove("scale-95");
+                    content.classList.add("scale-100");
+                }, 10);
+            };
+
+            const closeModalFunc = (modal, content) => {
+                modal.classList.add("opacity-0");
+                content.classList.remove("scale-100");
+                content.classList.add("scale-95");
+                setTimeout(() => {
+                    modal.classList.add("hidden");
+                }, 300);
+            };
+
+            // Events
+            historyBtn.addEventListener("click", () => {
+                renderHistory();
+                openModal(historyModal, modalContent);
+            });
+            closeModal.addEventListener("click", () =>
+                closeModalFunc(historyModal, modalContent),
+            );
+            historyModal.addEventListener("click", (e) => {
+                if (e.target === historyModal)
+                    closeModalFunc(historyModal, modalContent);
+            });
+
+            aboutBtn.addEventListener("click", () =>
+                openModal(aboutModal, aboutModalContent),
+            );
+            closeAboutModal.addEventListener("click", () =>
+                closeModalFunc(aboutModal, aboutModalContent),
+            );
+            aboutModal.addEventListener("click", (e) => {
+                if (e.target === aboutModal)
+                    closeModalFunc(aboutModal, aboutModalContent);
+            });
+
+            clearHistoryBtn.addEventListener("click", () => {
+                if (confirm("Are you sure?")) {
+                    localStorage.removeItem(STORAGE_KEY);
+                    renderHistory();
+                }
+            });
+
+            const urlParams = new URLSearchParams(window.location.search);
+            if (urlParams.get("error") === "not_found") {
+                errorMsg.textContent = t.not_found;
+                errorMsg.classList.remove("hidden");
+            }
+
+            // Settings logic
+            const settingsToggle = document.getElementById("settings-toggle");
+            const settingsPanel = document.getElementById("settings-panel");
+            const expirationOptions =
+                document.querySelectorAll(".expiration-option");
+            const maxUsesOptions =
+                document.querySelectorAll(".max-uses-option");
+
+            const updateHiddenInputs = (name, value) => {
+                const inputs = document.querySelectorAll(
+                    `input[name="${name}"]`,
+                );
+                inputs.forEach((input) => (input.value = value));
+            };
+
+            if (settingsToggle && settingsPanel) {
+                settingsToggle.addEventListener("click", () => {
+                    settingsPanel.classList.toggle("hidden");
+                });
+            }
+
+            expirationOptions.forEach((btn) => {
+                btn.addEventListener("click", () => {
+                    expirationOptions.forEach((b) => {
+                        b.classList.remove(
+                            "bg-cyan-600",
+                            "text-white",
+                            "shadow-sm",
+                            "border-transparent",
+                        );
+                        b.classList.add(
+                            "bg-gray-800",
+                            "text-gray-400",
+                            "border-gray-700",
+                        );
+                    });
+                    btn.classList.remove(
+                        "bg-gray-800",
+                        "text-gray-400",
+                        "border-gray-700",
+                    );
+                    btn.classList.add(
+                        "bg-cyan-600",
+                        "text-white",
+                        "shadow-sm",
+                        "border-transparent",
+                    );
+                    updateHiddenInputs("expiration", btn.dataset.value || "");
+                });
+            });
+
+            maxUsesOptions.forEach((btn) => {
+                btn.addEventListener("click", () => {
+                    maxUsesOptions.forEach((b) => {
+                        b.classList.remove(
+                            "bg-cyan-600",
+                            "text-white",
+                            "shadow-sm",
+                            "border-transparent",
+                        );
+                        b.classList.add(
+                            "bg-gray-800",
+                            "text-gray-400",
+                            "border-gray-700",
+                        );
+                    });
+                    btn.classList.remove(
+                        "bg-gray-800",
+                        "text-gray-400",
+                        "border-gray-700",
+                    );
+                    btn.classList.add(
+                        "bg-cyan-600",
+                        "text-white",
+                        "shadow-sm",
+                        "border-transparent",
+                    );
+                    updateHiddenInputs("maxUses", btn.dataset.value || "0");
+                });
+            });
+
+            // Tab Switching
+            if (tabSingleBtn && tabBulkBtn) {
+                tabSingleBtn.addEventListener("click", () => {
+                    tabSingleBtn.classList.add(
+                        "bg-cyan-600",
+                        "text-white",
+                        "shadow-sm",
+                    );
+                    tabSingleBtn.classList.remove("text-gray-400");
+                    tabBulkBtn.classList.remove(
+                        "bg-cyan-600",
+                        "text-white",
+                        "shadow-sm",
+                    );
+                    tabBulkBtn.classList.add("text-gray-400");
+
+                    form.classList.remove("hidden");
+                    bulkForm.classList.add("hidden");
+                    bulkResult.classList.add("hidden");
+                    if (shortLink.href && shortLink.textContent)
+                        result.classList.remove("hidden");
+                    errorMsg.classList.add("hidden");
+                });
+
+                tabBulkBtn.addEventListener("click", () => {
+                    tabBulkBtn.classList.add(
+                        "bg-cyan-600",
+                        "text-white",
+                        "shadow-sm",
+                    );
+                    tabBulkBtn.classList.remove("text-gray-400");
+                    tabSingleBtn.classList.remove(
+                        "bg-cyan-600",
+                        "text-white",
+                        "shadow-sm",
+                    );
+                    tabSingleBtn.classList.add("text-gray-400");
+
+                    bulkForm.classList.remove("hidden");
+                    form.classList.add("hidden");
+                    result.classList.add("hidden");
+                    if (bulkList.children.length > 0)
+                        bulkResult.classList.remove("hidden");
+                    errorMsg.classList.add("hidden");
+                });
+            }
+
+            const calcExpiresAt = (val) => {
+                if (!val) return null;
+                const now = new Date();
+                if (val === "1h") now.setHours(now.getHours() + 1);
+                if (val === "1d") now.setDate(now.getDate() + 1);
+                if (val === "1w") now.setDate(now.getDate() + 7);
+                return now.toISOString();
+            };
+
+            form.addEventListener("submit", async (e) => {
+                e.preventDefault();
+                const formData = new FormData(form);
+                const url = formData.get("url");
+                const slug = formData.get("slug");
+                const maxUses = formData.get("maxUses");
+                const expirationVal = formData.get("expiration");
+
+                const expiresAt = calcExpiresAt(expirationVal);
+
+                errorMsg.classList.add("hidden");
+                result.classList.add("hidden");
+
+                try {
+                    const res = await fetch("/api/shorten", {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({ url, slug, expiresAt, maxUses }),
+                    });
+
+                    const data = await res.json();
+
+                    if (!res.ok) {
+                        throw new Error(data.error || t.error);
+                    }
+
+                    const fullShortUrl = `${window.location.origin}/${data.slug}`;
+                    shortLink.href = fullShortUrl;
+                    shortLink.textContent = fullShortUrl; // Display full URL
+                    result.classList.remove("hidden");
+
+                    // Save to history
+                    saveToHistory({
+                        shortUrl: fullShortUrl,
+                        originalUrl: url,
+                        slug: data.slug,
+                        timestamp: Date.now(),
+                        expiresAt: expiresAt,
+                        maxUses: parseInt(maxUses) || 0,
+                    });
+                } catch (err) {
+                    errorMsg.textContent = err.message;
+                    errorMsg.classList.remove("hidden");
+                }
+            });
+
+            // Bulk Submit
+            bulkForm.addEventListener("submit", async (e) => {
+                e.preventDefault();
+                const formData = new FormData(bulkForm);
+                const urlsText = formData.get("urls");
+                const maxUses = formData.get("maxUses");
+                const expirationVal = formData.get("expiration");
+                const expiresAt = calcExpiresAt(expirationVal);
+
+                // Parse URLs
+                const urls = urlsText
+                    .split("\n")
+                    .map((u) => u.trim())
+                    .filter((u) => u);
+
+                if (urls.length === 0) return;
+
+                if (processingMsg) processingMsg.classList.remove("hidden");
+                bulkResult.classList.add("hidden");
+                errorMsg.classList.add("hidden");
+
+                try {
+                    const res = await fetch("/api/bulk-shorten", {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({ urls, expiresAt, maxUses }),
+                    });
+
+                    const data = await res.json();
+                    if (!res.ok) throw new Error(data.error || t.error);
+
+                    // Render
+                    bulkList.innerHTML = "";
+                    data.results.forEach((item) => {
+                        const div = document.createElement("div");
+                        div.className =
+                            "flex items-center justify-between bg-gray-900/50 p-2 rounded-lg border border-gray-700/50 text-sm";
+
+                        if (item.error) {
+                            div.innerHTML = `
+                                <span class="text-red-400 truncate max-w-[200px]">${item.url}</span>
+                                <span class="text-red-500 font-bold text-xs">${item.error}</span>
+                             `;
+                        } else {
+                            const full = `${window.location.origin}/${item.slug}`;
+                            div.innerHTML = `
+                                <div class="flex flex-col overflow-hidden mr-2">
+                                    <span class="text-gray-400 truncate text-xs" title="${item.url}">${item.url}</span>
+                                    <a href="${full}" target="_blank" class="text-cyan-400 font-bold hover:text-cyan-300 truncate">${full}</a>
+                                </div>
+                                <button class="copy-bulk-btn bg-gray-800 hover:bg-gray-700 text-gray-300 p-1.5 rounded transition-colors" data-url="${full}">
+                                     <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
+                                </button>
+                             `;
+
+                            saveToHistory({
+                                shortUrl: full,
+                                originalUrl: item.url,
+                                slug: item.slug,
+                                timestamp: Date.now(),
+                                expiresAt: expiresAt,
+                                maxUses: parseInt(maxUses) || 0,
+                            });
+                        }
+                        bulkList.appendChild(div);
+                    });
+
+                    document
+                        .querySelectorAll(".copy-bulk-btn")
+                        .forEach((btn) => {
+                            btn.addEventListener("click", (e) => {
+                                const target = e.currentTarget;
+                                navigator.clipboard
+                                    .writeText(target.dataset.url)
+                                    .then(() => {
+                                        const svgs = target.innerHTML;
+                                        target.innerHTML =
+                                            '<span class="text-xs font-bold text-green-400">✓</span>';
+                                        setTimeout(
+                                            () => (target.innerHTML = svgs),
+                                            1500,
+                                        );
+                                    });
+                            });
+                        });
+
+                    bulkResult.classList.remove("hidden");
+                    renderHistory();
+                } catch (err) {
+                    errorMsg.textContent = err.message;
+                    errorMsg.classList.remove("hidden");
+                } finally {
+                    if (processingMsg) processingMsg.classList.add("hidden");
+                }
+            });
+
+            copyBtn.addEventListener("click", () => {
+                navigator.clipboard.writeText(shortLink.href).then(() => {
+                    const originalIcon = copyBtn.innerHTML;
+                    copyBtn.innerHTML =
+                        '<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>';
+                    setTimeout(() => {
+                        copyBtn.innerHTML = originalIcon;
+                    }, 2000);
+                });
+            });
+        </script>
+    </body>
+</html>
