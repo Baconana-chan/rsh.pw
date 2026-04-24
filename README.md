@@ -2,6 +2,14 @@
 
 Minimal URL shortener and link bundle service built with Astro, Tailwind, and SQLite.
 
+## Live Demo
+
+Production demo is available at:
+
+- https://rsh.pw
+
+`rsh.pw` is the actual live domain, not just the repository name.
+
 The project supports:
 
 - single-link shortening
@@ -157,14 +165,9 @@ Production flow is roughly:
 
 ## Status
 
-This repository is an active app project, not a starter template.
+This repository is archived.
 
-Current polish still worth doing:
-
-- add a proper license file
-- add screenshots to the README
-- document backup and migration strategy for `rsh.db`
-- split some large UI files into smaller modules
+The live demo may still work, but the project is no longer under active development and I do not plan to continue expanding it.
 
 ## License
 
